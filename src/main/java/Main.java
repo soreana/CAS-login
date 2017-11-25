@@ -1,4 +1,8 @@
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
 import org.apache.log4j.Logger;
+import org.json.JSONObject;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.firefox.FirefoxDriver;
@@ -34,7 +38,7 @@ public class Main {
             log.info("browser " + prop.getProperty("browser") + " was chosen");
 
             loginUrl = prop.getProperty("loginUrlPath");
-            log.info("loginUrl : " + loginUrl );
+            log.info("loginUrl : " + loginUrl);
 
             logoutUrl = prop.getProperty("logoutUrlPath");
             log.info("logoutUrl : " + logoutUrl);
@@ -44,14 +48,42 @@ public class Main {
         }
     }
 
+    private static boolean isSeleniumUp() {
+        try {
+            OkHttpClient client = new OkHttpClient();
+
+            Request request = new Request.Builder()
+                    .url("http://localhost:4444/wd/hub/status")
+                    .get()
+                    .addHeader("cache-control", "no-cache")
+                    .build();
+
+            Response response = client.newCall(request).execute();
+            String body = response.body().string();
+            JSONObject JBody = new JSONObject(body);
+
+            log.info("selenium is ready : " + JBody.getJSONObject("value").get("ready"));
+
+            return (boolean) JBody.getJSONObject("value").get("ready");
+
+        } catch (IOException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
     private static void initialCheck(int argsLength) {
         if (argsLength <= 0) {
             log.error("You should provide config file path");
             System.exit(-1);
         }
 
-        // todo check selenium and start it :)
-        // todo check Phantom and firefox
+        if (!isSeleniumUp()) {
+            log.error("Please start selenium server first.");
+            System.exit(-1);
+        }
+
+        // todo check PhantomJS and Firefox
     }
 
     public static void main(String[] args) {
