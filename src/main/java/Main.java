@@ -1,25 +1,31 @@
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.json.JSONObject;
 import org.openqa.selenium.By;
+import org.openqa.selenium.Dimension;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.firefox.FirefoxDriver;
 import org.openqa.selenium.phantomjs.PhantomJSDriver;
+import org.openqa.selenium.support.ui.ExpectedConditions;
+import org.openqa.selenium.support.ui.WebDriverWait;
 
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
+import java.util.Scanner;
 
 public class Main {
-    private final static Logger log = Logger.getLogger(Main.class);
+    private final static Logger log = LogManager.getLogger(Main.class);
 
     private static WebDriver driver;
     private static Properties prop = new Properties();
     private static String loginUrl;
     private static String logoutUrl;
+    private static WebDriverWait wait;
 
     static {
 
@@ -34,6 +40,10 @@ public class Main {
                 driver = new FirefoxDriver(); // as you can see it's firefox :)
             else
                 driver = new PhantomJSDriver(); // load browser without ui
+
+            driver.manage().window().setSize(new Dimension(400, 300));
+
+            wait = new WebDriverWait(driver, 15);
 
             log.info("browser " + prop.getProperty("browser") + " was chosen");
 
@@ -67,7 +77,6 @@ public class Main {
             return (boolean) JBody.getJSONObject("value").get("ready");
 
         } catch (IOException e) {
-            e.printStackTrace();
             return false;
         }
     }
@@ -86,45 +95,53 @@ public class Main {
         // todo check PhantomJS and Firefox
     }
 
-    public static void main(String[] args) {
+    private static void login(Scanner console) throws InterruptedException {
+        driver.get(loginUrl);
+        wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath(prop.getProperty("loginTest"))));
+
+        System.out.println("Please enter your ut email without @ut.ac.ir :");
+        driver.findElement(By.xpath(prop.getProperty("usernameXpath"))).sendKeys(console.nextLine());
+
+        System.out.println("Please enter your password :");
+        String password = new String(System.console().readPassword());
+        driver.findElement(By.xpath(prop.getProperty("passwordXpath"))).sendKeys(password);
+
+        driver.findElement(By.id("login-btn")).click();
+        // todo test login
+        Thread.sleep(5000);
+    }
+
+    private static void logout() {
+        driver.get(logoutUrl);
+    }
+
+    public static void main(String[] args) throws InterruptedException {
 
         initialCheck(args.length);
 
         loadProperties(args[0]);
 
-        // todo get command
-        try {
+        boolean exit = false;
+        Scanner console = new Scanner(System.in);
 
-            String expectedTitle = "صفحه\u200Cی ورود به اینترنت";
-            String actualTitle = "";
-
-            // launch Fire fox and direct it to the Base URL
-            driver.get(loginUrl);
-//            driver.manage().window().fullscreen();
-            Thread.sleep(5000);
-
-            // get the actual value of the title
-            actualTitle = driver.getTitle();
-
-            driver.findElement(By.xpath(".//*[@id='usename-field']")).sendKeys("sina_kashipazha");
-            String username = driver.findElement(By.xpath(".//*[@id='usename-field']")).getText();
-            driver.findElement(By.xpath(".//*[@id='login-form']/div[3]/input")).sendKeys("");
-            String password = driver.findElement(By.xpath(".//*[@id='login-form']/div[3]/input")).getText();
-
-            driver.findElement(By.id("login-btn")).click();
-            Thread.sleep(5000);
-
-        /*
-         * compare the actual title of the page with the expected one and print
-         * the result as "Passed" or "Failed"
-         */
-            if (actualTitle.contentEquals(expectedTitle)) {
-                System.out.println("Test Passed!");
+        while (!exit) {
+            System.out.println("Please enter your command [Available commands are login, logout and exit");
+            String command = console.nextLine().toLowerCase();
+            if ("login".equals(command)) {
+                login(console);
+            } else if ("logout".equals(command)) {
+                logout();
+            } else if ("exit".equals(command)) {
+                exit = true;
             } else {
-                System.out.println("Test Failed");
+                System.err.println("Unknown command.");
+                System.err.flush();
             }
 
-            //close Fire fox
+        }
+
+        try {
+            //close Browser
             driver.close();
 
         } catch (Exception e) {
