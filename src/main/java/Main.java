@@ -16,7 +16,6 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
-import java.util.Scanner;
 
 public class Main {
     private final static Logger log = LogManager.getLogger(Main.class);
@@ -82,8 +81,8 @@ public class Main {
     }
 
     private static void initialCheck(int argsLength) {
-        if (argsLength <= 0) {
-            log.error("You should provide config file path");
+        if (argsLength <= 4) {
+            log.error("Insufficient arguments, usage : java -jar UT-CAS.jar <config file path> <command> <username> <password>");
             System.exit(-1);
         }
 
@@ -91,23 +90,18 @@ public class Main {
             log.error("Please start selenium server first.");
             System.exit(-1);
         }
-
-        // todo check PhantomJS and Firefox
     }
 
-    private static void login(Scanner console) throws InterruptedException {
+    private static void login(String username, String password) throws InterruptedException {
         driver.get(loginUrl);
         wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath(prop.getProperty("loginTest"))));
 
-        System.out.println("Please enter your ut email without @ut.ac.ir :");
-        driver.findElement(By.xpath(prop.getProperty("usernameXpath"))).sendKeys(console.nextLine());
+        driver.findElement(By.xpath(prop.getProperty("usernameXpath"))).sendKeys(username);
 
-        System.out.println("Please enter your password :");
-        String password = new String(System.console().readPassword());
         driver.findElement(By.xpath(prop.getProperty("passwordXpath"))).sendKeys(password);
 
         driver.findElement(By.id("login-btn")).click();
-        // todo test login
+        // todo test login and remove exception
         Thread.sleep(5000);
     }
 
@@ -121,32 +115,15 @@ public class Main {
 
         loadProperties(args[0]);
 
-        boolean exit = false;
-        Scanner console = new Scanner(System.in);
-
-        while (!exit) {
-            System.out.println("Please enter your command [Available commands are login, logout and exit");
-            String command = console.nextLine().toLowerCase();
-            if ("login".equals(command)) {
-                login(console);
-            } else if ("logout".equals(command)) {
-                logout();
-            } else if ("exit".equals(command)) {
-                exit = true;
-            } else {
-                System.err.println("Unknown command.");
-                System.err.flush();
-            }
-
+        String command = args[1];
+        if ("login".equals(command)) {
+            login(args[2], args[3]);
+        } else if ("logout".equals(command)) {
+            logout();
+        } else {
+            log.error("Unknown command.");
         }
 
-        try {
-            //close Browser
-            driver.close();
-
-        } catch (Exception e) {
-            e.printStackTrace();
-            driver.close();
-        }
+        driver.close();
     }
 }
