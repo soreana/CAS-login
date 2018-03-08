@@ -24,7 +24,7 @@ http://webdriver.io/guide/getstarted/modes.html
 http://webdriver.io/guide.html
 
 # no more commits :)
-I started this project to learn selenium and now I can do what ever I needs with selenium as a result there is no need to 
+I started this project to learn selenium and now I can do what ever I needs with it, as a result there is no need to 
 continue this project.
 The easiest way to log in in University of Tehran Hotspot is to using this script :
 https://gist.github.com/soreana/394807793e9810ec0e0b14f6daaf6e72
